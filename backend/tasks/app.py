@@ -46,6 +46,8 @@ celery_app.conf.timezone = 'UTC'
 celery_app.conf.result_expires = 60
 celery_app.conf.broker_connection_retry_on_startup = True
 
+dep_env = os.getenv("DEP_ENV")
+
 
 """Task definitions"""
 @celery_app.task
@@ -54,7 +56,8 @@ def main() -> bool:
     # celery_app.control.purge()
 
     # Send request to API endpoint to start task
-    api_url = 'https://auto-nabavka-api.onrender.com/api/queue-tasks'
+    root = "http://localhost:8000" if dep_env == 'dev' else "https://auto-nabavka.onrender.com"
+    api_url = f'{root}/api/queue-tasks'
 
     # JSON payload
     payload = {
