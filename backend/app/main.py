@@ -54,9 +54,5 @@ if settings.all_cors_origins:
         allow_headers=["*"],
     )
 
-@app.get("/")
-async def home():
-    return "Home page, nothing here yet"
-
 # Include routers
 app.include_router(api_router)
