@@ -6,7 +6,6 @@ import logging
 from rich import print
 from typing import Any
 from telegram import Bot
-from telegram import InputMediaPhoto
 from bs4 import BeautifulSoup
 from curl_cffi import requests
 from dotenv import load_dotenv
@@ -81,35 +80,23 @@ def search_main(user_data: dict[str, int | str]) -> Any:
     bot = Bot(token)
 
     # Send single ads alone and exit
-    if len(ads) < 2:
-        ad = ads[0]
-        ad_string = f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
-        payload = payload = {
-            "chat_id": chat_id,
-            "text": ad_string,
-        }
-        res = asyncio.run(bot.send_message(chat_id=chat_id, text=ad_string))
-        return res
+    # if len(ads) < 2:
+    #     ad = ads[0]
+    #     ad_string = f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
+    #     res = asyncio.run(bot.send_message(chat_id=chat_id, text=ad_string))
+    #     return res
 
     # Send ads in chunks of 10 as media galleries
-    for i in range(0, len(ads), 10):
-        group = ads[i:i + 10]
-
-        media = []
+    for i in range(0, len(ads), 20):
+        group = ads[i:i + 20]
         for ad in group:
-            photo = InputMediaPhoto(
-                media=ad['image'],
+            try:
                 caption=f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
-            )
-            media.append(photo)
-
-        try:
-            response = asyncio.run(bot.send_media_group(chat_id=chat_id, media=media))
-            return response
-            return f"{len(ads)} ads sent to {chat_id}"
-        except httpx.HTTPError as e:
-            logging.error(f"Failed to send ads: {str(e)}")
-            continue
+                asyncio.run(bot.send_message(chat_id=chat_id, text=caption))
+            except httpx.HTTPError as e:
+                logging.error(f"Failed to send an ad: {str(e)}")
+                continue
+    return f"{len(ads)} ads sent to {chat_id}"
 
 
 if __name__ == "__main__":
