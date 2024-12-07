@@ -8,7 +8,7 @@ from app import crud
 from app.core.config import settings
 from app.core.db import AsyncSessionLocal
 from app.core.security import verify_password
-from app.models import UserUpdate, UserCreate, TaskUserResponse, QueueTasksRequest
+from app.models import UserUpdate, UserCreate, TaskUserResponse, TaskRequest, SendAdsRequest
 
 
 router = APIRouter()
@@ -232,12 +232,12 @@ async def set_webhook() -> Response:
 
 
 @router.post("/queue-tasks", response_model=TaskUserResponse)
-async def queue_tasks(request: QueueTasksRequest):
+async def queue_tasks(request: TaskRequest):
     # Verify if request is from one of our workers
-    if request.celery_auth != "leslie":
+    if request.celery_auth != settings.CELERY_AUTH:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid request, missing auth value"
+            detail="Direct access to this resource is unavailable."
         )
 
     async with AsyncSessionLocal() as session:
@@ -245,5 +245,28 @@ async def queue_tasks(request: QueueTasksRequest):
 
     return JSONResponse(
         content={"users": users},
+        status_code=status.HTTP_200_OK
+    )
+
+
+@router.post("/send-ads", response_model=int, status_code=200)
+async def send_ads(request: SendAdsRequest):
+    # Verify if request is from one of our workers
+    if request.celery_auth != settings.CELERY_AUTH:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Direct access to this resource is unavailable."
+        )
+    
+    bot = Bot(BOT_TOKEN)
+    chat_id = request.chat_id
+    for ad in request.ads:
+        try:
+            await bot.send_message(chat_id=chat_id, text=ad)
+        except Exception:
+            continue
+    
+    return JSONResponse(
+        content={"message": f"Ads sent to: {chat_id}"},
         status_code=status.HTTP_200_OK
     )
