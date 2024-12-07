@@ -178,7 +178,7 @@ async def ask_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 email=email,
                 password=user_password,
             )
-            user = crud.create_user(session=session, user_create=user_in)
+            user = await crud.create_user(session=session, user_create=user_in)
             await update.message.reply_text(f"Registration complete!\nEmail: {email}\nPassword: {user_password}\n")
         else:
             await update.message.reply_text("User already registerd.")

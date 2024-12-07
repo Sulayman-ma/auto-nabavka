@@ -73,9 +73,10 @@ def main() -> bool:
         users = response.json()["users"]
 
         if users:
-            logging.info(f"Processing {len(users)} users\n")
+            logging.info(f"Processing {len(users)} user(s)\n")
             for user in users:
                 search.apply_async(args=[user])
+            return True
         else:
             return "No users found"
 
