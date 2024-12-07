@@ -1,14 +1,13 @@
-import os
 import json
-import httpx
-import asyncio
 import logging
 from rich import print
 from typing import Any
-from telegram import Bot
 from bs4 import BeautifulSoup
 from curl_cffi import requests
+from curl_cffi.requests import exceptions
 from dotenv import load_dotenv
+
+from app.core.config import settings
 
 
 
@@ -74,29 +73,28 @@ def search_main(user_data: dict[str, int | str]) -> Any:
     # No reuslts found
     if not articles:
         return "No ads found"
-
-    # Bot token
-    token = os.getenv("BOT_TOKEN")
-    bot = Bot(token)
-
-    # Send single ads alone and exit
-    # if len(ads) < 2:
-    #     ad = ads[0]
-    #     ad_string = f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
-    #     res = asyncio.run(bot.send_message(chat_id=chat_id, text=ad_string))
-    #     return res
-
-    # Send ads in chunks of 10 as media galleries
-    for i in range(0, len(ads), 20):
-        group = ads[i:i + 20]
-        for ad in group:
-            try:
-                caption=f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
-                asyncio.run(bot.send_message(chat_id=chat_id, text=caption))
-            except httpx.HTTPError as e:
-                logging.error(f"Failed to send an ad: {str(e)}")
-                continue
-    return f"{len(ads)} ads sent to {chat_id}"
+    
+    # Transform ads to caption only
+    ads = [
+        f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
+        for ad in ads
+    ]
+    # Use API to send ads
+    celery_auth = settings.CELERY_AUTH
+    payload = {
+        'celery_auth': celery_auth,
+        'chat_id': chat_id,
+        'ads': ads
+    }
+    try:
+        res = requests.post(
+            url="https://auto-nabavka.onrender.com/api/send-ads",
+            # url="http://localhost:8000/api/send-ads",
+            json=payload
+        )
+        return True
+    except exceptions.HTTPError as e:
+        return str(e)
 
 
 if __name__ == "__main__":
