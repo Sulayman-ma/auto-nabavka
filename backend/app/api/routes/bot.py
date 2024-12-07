@@ -233,6 +233,7 @@ registration_handler = ConversationHandler(
 )
 bot_app.add_handler(CommandHandler("start", start))
 bot_app.add_handler(CommandHandler("seturl", seturl))
+bot_app.add_handler(CommandHandler("enable", enable))
 bot_app.add_handler(CommandHandler("disable", disable))
 bot_app.add_handler(CommandHandler("help", help))
 bot_app.add_handler(CommandHandler("link", link))
