@@ -1,4 +1,5 @@
 import uuid
+from typing import ClassVar
 
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel
@@ -64,8 +65,13 @@ class TaskUserResponse(SQLModel):
     users: list[dict[str, int | str]]
 
 
-class QueueTasksRequest(SQLModel):
+class TaskRequest(SQLModel):
     celery_auth: str
+
+
+class SendAdsRequest(TaskRequest):
+    chat_id: int
+    ads: list[str]
 
 
 # JSON payload containing access token
