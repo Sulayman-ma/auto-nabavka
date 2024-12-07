@@ -38,7 +38,7 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'main-scrape': {
         'task': 'tasks.app.main',
-        'schedule': "0 * * * *"
+        'schedule': "*/2 * * * *"
     },
 }
 celery_app.conf.timezone = 'UTC'
