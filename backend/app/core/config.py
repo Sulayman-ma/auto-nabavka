@@ -76,5 +76,7 @@ class Settings(BaseSettings):
     SUPERUSERS: list[str] = os.getenv("SUPERUSER")
     SUPERUSER_PASSWORD: str = os.getenv("SUPERUSER_PASSWORD")
 
+    CELERY_AUTH: str = os.getenv("CELERY_AUTH")
+
 
 settings = Settings()  # type: ignore

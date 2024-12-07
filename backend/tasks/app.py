@@ -2,9 +2,9 @@ import os
 import logging
 import warnings
 from typing import Any
+from telegram import Bot
 from dotenv import load_dotenv
 from curl_cffi import requests
-from curl_cffi.requests.exceptions import HTTPError
 
 from celery import Celery
 from celery.schedules import crontab
@@ -46,7 +46,10 @@ celery_app.conf.timezone = 'UTC'
 celery_app.conf.result_expires = 60
 celery_app.conf.broker_connection_retry_on_startup = True
 
-dep_env = os.getenv("DEP_ENV")
+
+# Bot token
+token = os.getenv("BOT_TOKEN")
+bot = Bot(token)
 
 
 """Task definitions"""
@@ -56,8 +59,7 @@ def main() -> bool:
     # celery_app.control.purge()
 
     # Send request to API endpoint to start task
-    root = "http://localhost:8000" if dep_env == 'dev' else "https://auto-nabavka.onrender.com"
-    api_url = f'{root}/api/queue-tasks'
+    api_url = 'https://auto-nabavka.onrender.com/api/queue-tasks'
 
     # JSON payload
     payload = {
@@ -74,12 +76,8 @@ def main() -> bool:
             logging.info(f"Processing {len(users)} users\n")
             for user in users:
                 search.apply_async(args=[user])
-            return "Tasks queued"
         else:
             return "No users found"
-    
-    except HTTPError as e:
-        return f"Failed to send queue request: {str(e)}"
 
     except Exception as e:
         return f"Failed to queue tasks: {str(e)}"
