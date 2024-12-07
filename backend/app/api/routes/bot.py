@@ -47,10 +47,14 @@ async def seturl(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with AsyncSessionLocal() as session:
         db_user = await crud.get_user_by_chat_id(session=session, chat_id=chat_id)
         if db_user:
-            user_in = UserUpdate(mobili_url=url, is_task_active=True)
-            await crud.update_user(session=session, db_user=db_user, user_in=user_in)
-            await update.message.reply_text("URL set! Ads will be sent periodically, thank you for using this service.")
-            return
+            if db_user.is_active:
+                user_in = UserUpdate(mobili_url=url, is_task_active=True)
+                await crud.update_user(session=session, db_user=db_user, user_in=user_in)
+                await update.message.reply_text("URL set! Ads will be sent periodically, thank you for using this service.")
+                return
+            else:
+                await update.message.reply_text("Account is inactive, please contact an admin to reenable it.")
+                return
 
     await update.message.reply_text("Account not linked, please use the /link command to link your chat to your account.")
 
