@@ -1,12 +1,15 @@
 import os
 import json
 import httpx
+import asyncio
 import logging
 from rich import print
 from typing import Any
-from dotenv import load_dotenv
+from telegram import Bot
+from telegram import InputMediaPhoto
 from bs4 import BeautifulSoup
 from curl_cffi import requests
+from dotenv import load_dotenv
 
 
 
@@ -75,6 +78,7 @@ def search_main(user_data: dict[str, int | str]) -> Any:
 
     # Bot token
     token = os.getenv("BOT_TOKEN")
+    bot = Bot(token)
 
     # Send single ads alone and exit
     if len(ads) < 2:
@@ -84,8 +88,8 @@ def search_main(user_data: dict[str, int | str]) -> Any:
             "chat_id": chat_id,
             "text": ad_string,
         }
-        httpx.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload)
-        return f"1 ad send to {chat_id}"
+        res = asyncio.run(bot.send_message(chat_id=chat_id, text=ad_string))
+        return res
 
     # Send ads in chunks of 10 as media galleries
     for i in range(0, len(ads), 10):
@@ -93,22 +97,18 @@ def search_main(user_data: dict[str, int | str]) -> Any:
 
         media = []
         for ad in group:
-            ad_media = {
-                "type": "photo",
-                "media": ad["image"],
-                "caption": f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}",
-            }
-            media.append(ad_media)
+            photo = InputMediaPhoto(
+                media=ad['image'],
+                caption=f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
+            )
+            media.append(photo)
 
-        payload = {
-            "chat_id": chat_id,
-            "media": json.dumps(media),
-        }
         try:
-            httpx.post(f"https://api.telegram.org/bot{token}/sendMediaGroup", json=payload)
-            return f"{len(ads)} ads send to {chat_id}"
+            response = asyncio.run(bot.send_media_group(chat_id=chat_id, media=media))
+            return response
+            return f"{len(ads)} ads sent to {chat_id}"
         except httpx.HTTPError as e:
-            logging.error(f"Failed to send ads to {chat_id}: {str(e)}")
+            logging.error(f"Failed to send ads: {str(e)}")
             continue
 
 
