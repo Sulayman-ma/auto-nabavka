@@ -85,6 +85,34 @@ async def link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("User not registered, please contact an admin for help getting registered.")
 
 
+async def enable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Return an error if URL was not provided
+    if not context.args:
+        await update.message.reply_text("Please include a user email in your request.")
+        return
+
+    if len(context.args) > 1:
+        await update.message.reply_text("Too many arguments, please provide only one email.")
+        return
+    
+    email = context.args[0]
+    async with AsyncSessionLocal() as session:
+        db_user = await crud.get_user_by_email(session=session, email=email)
+        if db_user:
+            if not db_user.is_active:
+                user_in = UserUpdate(is_active=True)
+                if db_user.mobili_url:
+                    user_in.is_task_active = True
+                await crud.update_user(session=session, db_user=db_user, user_in=user_in)
+                await update.message.reply_text("User is now active.")
+                return
+            else:
+                await update.message.reply_text("User is already active.")
+                return
+        await update.message.reply_text("User not found.")
+        return
+
+
 async def disable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Return an error if URL was not provided
     if not context.args:
@@ -100,12 +128,12 @@ async def disable(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db_user = await crud.get_user_by_email(session=session, email=email)
         if db_user:
             if db_user.is_active:
-                user_in = UserUpdate(is_active=False)
+                user_in = UserUpdate(is_active=False, is_task_active=False)
                 await crud.update_user(session=session, db_user=db_user, user_in=user_in)
-                await update.message.reply_text("User successfully deactivated.")
+                await update.message.reply_text("User successfully disabled.")
                 return
             else:
-                await update.message.reply_text("User is already inactive")
+                await update.message.reply_text("User is already inactive.")
                 return
         await update.message.reply_text("User not found.")
 
