@@ -47,8 +47,8 @@ async def seturl(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with AsyncSessionLocal() as session:
         db_user = await crud.get_user_by_chat_id(session=session, chat_id=chat_id)
         if db_user:
-            user_update = UserUpdate(mobili_url=url, is_task_active=True)
-            await crud.update_user(session=session, db_user=db_user, user_in=user_update)
+            user_in = UserUpdate(mobili_url=url, is_task_active=True)
+            await crud.update_user(session=session, db_user=db_user, user_in=user_in)
             await update.message.reply_text("URL set! Ads will be sent periodically, thank you for using this service.")
             return
 
@@ -78,11 +78,36 @@ async def link(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Account already linked, contact developer to unlink.")
                 return
             else:
-                user_update = UserUpdate(chat_id=chat_id)
-                await crud.update_user(session=session, db_user=db_user, user_in=user_update)
+                user_in = UserUpdate(chat_id=chat_id)
+                await crud.update_user(session=session, db_user=db_user, user_in=user_in)
                 await update.message.reply_text("Account linked successfully! Proceed to set your URL with the /seturl command.")
                 return
         await update.message.reply_text("User not registered, please contact an admin for help getting registered.")
+
+
+async def disable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Return an error if URL was not provided
+    if not context.args:
+        await update.message.reply_text("Please include a user email in your request.")
+        return
+
+    if len(context.args) > 1:
+        await update.message.reply_text("Too many arguments, please provide only one email.")
+        return
+    
+    email = context.args[0]
+    async with AsyncSessionLocal() as session:
+        db_user = await crud.get_user_by_email(session=session, email=email)
+        if db_user:
+            if db_user.is_active:
+                user_in = UserUpdate(is_active=False)
+                await crud.update_user(session=session, db_user=db_user, user_in=user_in)
+                await update.message.reply_text("User successfully deactivated.")
+                return
+            else:
+                await update.message.reply_text("User is already inactive")
+                return
+        await update.message.reply_text("User not found.")
 
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -164,7 +189,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Registration canceled.")
     return ConversationHandler.END
 
-# Registratoin conversation handler setup
+# Add handlers to the Bot
 registration_handler = ConversationHandler(
     entry_points=[CommandHandler("register", start_registration)],
     states={
@@ -174,11 +199,9 @@ registration_handler = ConversationHandler(
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
-
-
-# Add handlers to bot application
 bot_app.add_handler(CommandHandler("start", start))
 bot_app.add_handler(CommandHandler("seturl", seturl))
+bot_app.add_handler(CommandHandler("disable", disable))
 bot_app.add_handler(CommandHandler("help", help))
 bot_app.add_handler(CommandHandler("link", link))
 bot_app.add_handler(registration_handler)
