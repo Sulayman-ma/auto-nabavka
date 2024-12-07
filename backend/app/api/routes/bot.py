@@ -148,19 +148,19 @@ async def start_registration(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def ask_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Save email to context.user_data
-    context.user_data['email'] = update.message.text
+    context.user_data['email'] = update.message.text.strip()
     await update.message.reply_text("User password:")
     return ASK_PASSWORD
 
 async def ask_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Save password to context.user_data
-    context.user_data['password'] = update.message.text
+    context.user_data['password'] = update.message.text.strip()
     await update.message.reply_text("Please enter your admin password:")
     return ASK_CODE
 
 async def ask_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Verify admin password
-    admin_password = update.message.text
+    admin_password = update.message.text.strip()
     password_hash = context.user_data['password_hash']
 
     if not verify_password(admin_password, password_hash):
