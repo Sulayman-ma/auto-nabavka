@@ -15,7 +15,7 @@ def search_main(user_data: dict[str, int | str]) -> Any:
     chat_id = user_data['chat_id']
 
     # Ads to be jsonified and returned by function
-    ads = []
+    ads: list[dict] = []
 
     # Request headers
     headers = {
@@ -76,25 +76,37 @@ def search_main(user_data: dict[str, int | str]) -> Any:
     # Bot token
     token = os.getenv("BOT_TOKEN")
 
+    # Send single ads alone and exit
+    if len(ads) < 2:
+        ad = ads[0]
+        ad_string = f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
+        payload = payload = {
+            "chat_id": chat_id,
+            "text": ad_string,
+        }
+        httpx.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload)
+        return f"1 ad send to {chat_id}"
+
     # Send ads in chunks of 10 as media galleries
     for i in range(0, len(ads), 10):
         group = ads[i:i + 10]
 
-        media = [
-            {
+        media = []
+        for ad in group:
+            ad_media = {
                 "type": "photo",
                 "media": ad["image"],
                 "caption": f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}",
             }
-            for ad in group
-        ]
+            media.append(ad_media)
+
         payload = {
             "chat_id": chat_id,
-            "media": media,
+            "media": json.dumps(media),
         }
         try:
             httpx.post(f"https://api.telegram.org/bot{token}/sendMediaGroup", json=payload)
-            return f"{len(ads)} send to {chat_id}"
+            return f"{len(ads)} ads send to {chat_id}"
         except httpx.HTTPError as e:
             logging.error(f"Failed to send ads to {chat_id}: {str(e)}")
             continue
