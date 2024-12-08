@@ -92,7 +92,7 @@ def search_main(user_data: dict[str, int | str]) -> Any:
             # url="http://localhost:8000/api/send-ads",
             json=payload
         )
-        return True
+        return res.json()
     except exceptions.HTTPError as e:
         return str(e)
 
