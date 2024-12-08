@@ -19,7 +19,7 @@ class User(UserBase, table=True):
     mobili_url: str | None = Field(default=None)
     chat_id: int | None = Field(default=None, sa_column=Column(BigInteger, nullable=True, index=True))
     is_task_active: bool = Field(default=False)
-    previous_ads: str | None = Field(default='[]')
+    previous_ads: str = Field(default='[]')
 
 
 # Properties to receive via API on creation
@@ -40,7 +40,7 @@ class UserUpdate(UserBase):
     mobili_url: str | None = Field(default=None)
     chat_id: int | None = Field(default=None, sa_column=Column(BigInteger, nullable=True, index=True))
     is_active: bool = Field(default=True)
-    previous_ads: str | None = Field(default=None)
+    previous_ads: str = Field(default=None)
 
 
 class UserUpdateMe(SQLModel):
