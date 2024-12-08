@@ -358,7 +358,7 @@ async def send_ads(
     # Get previous ads from requesting user
     db_user = await crud.get_user_by_chat_id(session=session, chat_id=chat_id)
     previous_ads: list[str] = json.loads(db_user.previous_ads)
-    ads_json = json.loads(ads)
+    ads_json = json.dumps(ads)
     user_in = UserUpdate(previous_ads=ads_json)
 
     # Store ads if none found and return
