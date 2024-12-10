@@ -143,6 +143,10 @@ async def enable(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not db_user:
             await update.message.reply_text("User not found.")
             return
+        # Deny non superuser
+        if not db_user.is_superuser:
+            await unknown(update, context)
+            return
         # Abort if user is already active
         if db_user.is_active:
             await update.message.reply_text("User account is already enabled.")
@@ -174,6 +178,10 @@ async def disable(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Abort if user is not found
         if not db_user:
             await update.message.reply_text("User not found.")
+            return
+        # Deny non superuser
+        if not db_user.is_superuser:
+            await unknown(update, context)
             return
         # Abort if user is already active
         if not db_user.is_active:
