@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 7 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
-    # FRONTEND_HOST: str = "http://localhost:5173"
+    FRONTEND_HOST: str = "http://localhost:3000"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     BACKEND_CORS_ORIGINS: Annotated[
@@ -45,10 +45,10 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def all_cors_origins(self) -> list[str]:
-        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS]
-        # return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
-        #     self.FRONTEND_HOST
-        # ]
+        # return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS]
+        return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
+            self.FRONTEND_HOST
+        ]
 
     # Redis URL
     REDIS_URL: str = os.getenv("REDIS_URL")

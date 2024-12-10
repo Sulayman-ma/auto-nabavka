@@ -194,8 +194,11 @@ async def delete_user(
     return Message(message="User deleted successfully")
 
 
-@router.post("/toggle/{user_id}", dependencies=[Depends(get_current_active_superuser)])
-async def toggle_uer(
+@router.post(
+    "/toggle/{user_id}", 
+    dependencies=[Depends(get_current_active_superuser)]
+)
+async def toggle(
     session: SessionDep,
     current_user: CurrentUser,
     user_id: uuid.UUID
