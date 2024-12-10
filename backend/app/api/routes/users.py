@@ -192,3 +192,29 @@ async def delete_user(
     await session.delete(user)
     await session.commit()
     return Message(message="User deleted successfully")
+
+
+@router.post("/toggle/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+async def toggle_uer(
+    session: SessionDep,
+    current_user: CurrentUser,
+    user_id: uuid.UUID
+) -> Message:    
+    """
+    Toggle a user's active status.
+    """
+
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user == current_user:
+        raise HTTPException(
+            status_code=403, detail="Super users are not allowed to toggle themselves"
+        )
+    new_status = not user.is_active
+    user_in = UserUpdate(is_active=new_status)
+    await crud.update_user(session=session, db_user=user, user_in=user_in)
+    await session.commit()
+
+    message = "User has been activated" if new_status else "User has been deactivated"
+    return Message(message=message)

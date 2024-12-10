@@ -4,7 +4,6 @@ from collections.abc import AsyncGenerator
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from fastapi.responses import RedirectResponse
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from pydantic import ValidationError
 
