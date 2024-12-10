@@ -8,10 +8,14 @@ export function middleware(request) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
+  if (request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   // Allow the request to proceed if token is present
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard', '/test']
+  matcher: ['/dashboard', '/test', '/']
 }
