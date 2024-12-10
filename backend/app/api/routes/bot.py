@@ -197,6 +197,11 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Unknown command. Use /help to see available commands.")
 
 
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Operation canceled.")
+    return ConversationHandler.END
+
+
 """Admin bot commands for user registration"""
 # States for the registration process
 ASK_EMAIL, ASK_PASSWORD, ASK_CODE = range(3)
@@ -270,9 +275,35 @@ async def ask_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("User already registerd.")
     return ConversationHandler.END
 
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Registration canceled.")
+
+"""Conversation for linking account"""
+EMAIL, PASSWORD = range(2)
+
+async def start_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Welcome, link your chat to your account by entering your registered email:")
+    return EMAIL
+
+async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    email = await update.message.text.strip()
+    context.user_data['email'] = email
+
+    update.message.reply_text("Enter your password:")
+    return PASSWORD
+
+async def handle_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    password = update.message.text.strip()
+    email = context.user_data['email']
+
+    # Verify user's claim and account
+    async with AsyncSessionLocal() as session:
+        db_user = crud.authenticate(session=session, email=email, password=password)
+        if db_user:
+            await update.message.reply_text("Account linked successfully!")
+        else:
+            await update.message.reply_text("Invalid email or password. Please also ensure you have an account.")
+
     return ConversationHandler.END
+
 
 # Add handlers to the Bot
 registration_handler = ConversationHandler(
@@ -284,14 +315,23 @@ registration_handler = ConversationHandler(
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
+link_handler = ConversationHandler(
+    entry_points=[CommandHandler("link", start_link)],
+    states={
+        EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_email)],
+        PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_password)],
+    },
+    fallbacks=[CommandHandler("cancel", cancel)],
+)
 
 bot_app.add_handler(registration_handler)
+bot_app.add_handler(link_handler)
 bot_app.add_handler(CommandHandler("start", start))
 bot_app.add_handler(CommandHandler("seturl", seturl))
 bot_app.add_handler(CommandHandler("enable", enable))
 bot_app.add_handler(CommandHandler("disable", disable))
 bot_app.add_handler(CommandHandler("help", help))
-bot_app.add_handler(CommandHandler("link", link))
+# bot_app.add_handler(CommandHandler("link", link))
 bot_app.add_handler(CommandHandler("unlink", unlink))
 bot_app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
