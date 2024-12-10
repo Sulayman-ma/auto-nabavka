@@ -190,7 +190,7 @@ export default function UsersTable({ users: initialUsers, token }) {
         <Card className="mx-auto w-full max-w-[24rem]">
           <CardBody className="flex flex-col gap-4">
             <Typography variant="h4" color="blue-gray">Create User</Typography>
-            <Typography className="mb-3 font-normal" variant="paragraph" color="gray">Enter user's email and password.</Typography>
+            <Typography className="mb-3 font-normal" variant="paragraph" color="gray">Enter user email and password.</Typography>
             <Input label="Email" onChange={(e) => setEmail(e.target.value)} value={email} size="lg" />
             <Input label="Password" onChange={(e) => setPassword(e.target.value)} value={password} size="lg" />
           </CardBody>
