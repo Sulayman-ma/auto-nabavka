@@ -7,13 +7,14 @@ from curl_cffi import requests
 from curl_cffi.requests import exceptions
 from dotenv import load_dotenv
 
+from app.models import User
 from app.core.config import settings
 
 
 
-def search_main(user_data: dict[str, int | str]) -> Any:
-    search_url = user_data['mobili_url']
-    chat_id = user_data['chat_id']
+def search_main(user: User) -> Any:
+    search_url = user.mobili_url
+    chat_id = user.chat_id
 
     # Ads to be jsonified and returned by function
     ads: list[dict] = []

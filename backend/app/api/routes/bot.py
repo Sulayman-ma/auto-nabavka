@@ -12,7 +12,7 @@ from app.api.deps import SessionDep
 from app.core.config import settings
 from app.core.db import AsyncSessionLocal
 from app.core.security import verify_password
-from app.models import UserUpdate, UserCreate, TaskUserResponse, TaskRequest, AdsRequest
+from app.models import UserUpdate, UserCreate, UsersPublic, TaskRequest, AdsRequest
 
 
 router = APIRouter()
@@ -397,7 +397,7 @@ async def set_webhook() -> Response:
     return bot_set
 
 
-@router.post("/queue-tasks", response_model=TaskUserResponse)
+@router.post("/queue-tasks", response_model=UsersPublic)
 async def queue_tasks(
     request: TaskRequest, session: SessionDep
 ) -> Any:
@@ -410,10 +410,7 @@ async def queue_tasks(
 
     users = await crud.get_task_active_users(session=session)
 
-    return JSONResponse(
-        content={"users": users},
-        status_code=status.HTTP_200_OK
-    )
+    return users
 
 
 @router.post("/send-ads", response_model=int, status_code=200)

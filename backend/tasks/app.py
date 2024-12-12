@@ -9,6 +9,7 @@ from curl_cffi import requests
 from celery import Celery
 from celery.schedules import crontab
 
+from app.models import User
 from app.core.config import settings
 
 from .search import search_main
@@ -70,10 +71,11 @@ def main() -> bool:
     try:
         response = requests.post(api_url, json=payload)
         response.raise_for_status()
-        users = response.json()["users"]
+        users = response.json()["data"]
+        count = response.json()["count"]
 
         if users:
-            logging.info(f"Processing {len(users)} user(s)\n")
+            logging.info(f"Processing {count} user(s)\n")
             for user in users:
                 search.apply_async(args=[user])
             return True
@@ -85,6 +87,6 @@ def main() -> bool:
 
 
 @celery_app.task
-def search(user_data: dict[str, int | str]) -> Any:
-    results = search_main(user_data)
+def search(user: User) -> Any:
+    results = search_main(user)
     return results
