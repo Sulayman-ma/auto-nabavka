@@ -30,6 +30,7 @@ export default function UsersTable({ users: initialUsers, token }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedId, setSelectedId] = useState(null);
+  const [userToDelete, setUserToDelete] = useState('');
   const [users, setUsers] = useState(initialUsers);
 
   const handleToggleUser = async (id) => {
@@ -92,7 +93,7 @@ export default function UsersTable({ users: initialUsers, token }) {
         alert("An error occurred while deleting the user.");
     } finally {
         setLoading(false);
-        setConfirmOpen(false);
+        setDeleteOpen(false);
     }
   };  
 
@@ -216,10 +217,11 @@ export default function UsersTable({ users: initialUsers, token }) {
                     <td className={classes}>
                       <div className="w-max">
                         <TrashIcon 
-                          className='w-8 h-8'
+                          className='cursor-pointer hover:text-red-700'
                           onClick={() => {
                             setDeleteOpen((cur) => !cur)
                             setSelectedId(id)
+                            setUserToDelete(email)
                           }}
                         />
                       </div>
@@ -255,7 +257,7 @@ export default function UsersTable({ users: initialUsers, token }) {
           </CardBody>
           <CardFooter className="pt-0">
             <Button variant="gradient" className='mb-4' onClick={handleCreateUser} fullWidth disabled={loading}>
-              {loading ? <Spinner /> : "Submit"}
+              {loading ? <Spinner className='px-4 py-2' /> : "Submit"}
             </Button>
           </CardFooter>
         </Card>
@@ -263,12 +265,12 @@ export default function UsersTable({ users: initialUsers, token }) {
 
       {/* Delete User Dialog */}
       <Dialog open={deleteOpen} handler={() => setDeleteOpen((cur) => !cur)}>
-        <DialogHeader>Delete user</DialogHeader>
+        <DialogHeader>Delete user {userToDelete}</DialogHeader>
         <DialogBody>Are you sure you want to delete this user? This action cannot be undone</DialogBody>
         <DialogFooter>
           <button onClick={() => setDeleteOpen(false)} className="mr-2 bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
           <button onClick={() => handleDeleteUser(selectedId)} className="flex items-center bg-red-500 text-white px-4 py-2 rounded" disabled={loading}>
-            {loading ? <Spinner /> : "Delete"}
+            {loading ? <Spinner className='px-4 py-2' /> : "Delete"}
           </button>
         </DialogFooter>
       </Dialog>
