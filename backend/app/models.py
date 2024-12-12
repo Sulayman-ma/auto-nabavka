@@ -56,6 +56,7 @@ class UpdatePassword(SQLModel):
 class UserPublic(UserBase):
     id: uuid.UUID
     chat_id: int | None
+    mobili_url: str | None
 
 
 class UsersPublic(SQLModel):
