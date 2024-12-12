@@ -4,7 +4,10 @@ from typing import Any
 from sqlmodel import func, select
 from fastapi import APIRouter, Depends, HTTPException
 
+from telegram import Bot
+
 from app import crud
+from app.core.config import settings
 from app.api.deps import (
     CurrentUser,
     SessionDep,
@@ -220,4 +223,10 @@ async def toggle(
     await session.commit()
 
     message = "User has been activated" if new_status else "User has been deactivated"
+
+    # Send a notification to the user if they have a chat ID
+    if user.chat_id:
+        bot = Bot(settings.BOT_TOKEN)
+        await bot.send_message(chat_id=user.chat_id, text=message)
+
     return Message(message=message)
