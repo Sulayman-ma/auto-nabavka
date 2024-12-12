@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 
 async function getUsers(token) {
   try {
-    const response = await fetch(`${process.env.API_URL}/api/users/`, {
+    const response = await fetch(`https://auto-nabavka.onrender.com/api/users/`, {
         method: 'GET',
         cache: 'no-store',
         headers: {

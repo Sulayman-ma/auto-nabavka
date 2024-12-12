@@ -34,7 +34,7 @@ export default function UsersTable({ users: initialUsers, token }) {
   const handleToggleUser = async (id) => {
     setLoading(true);
     try {
-      const toggleUrl = `${process.env.API_URL}/api/users/toggle/${id}`;
+      const toggleUrl = `https://auto-nabavka.onrender.com/api/users/toggle/${id}`;
       const response = await fetch(toggleUrl, {
         method: 'POST',
         headers: {
@@ -73,7 +73,7 @@ export default function UsersTable({ users: initialUsers, token }) {
   const handleCreateUser = async () => {
     setLoading(true);
     try {
-      const url = `${process.env.API_URL}/api/users/`;
+      const url = `https://auto-nabavka.onrender.com/api/users/`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
