@@ -217,7 +217,7 @@ async def toggle(
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to toggle themselves"
         )
-    chat_id = user.chat_id
+    # chat_id = user.chat_id
     new_status = not user.is_active
     user_in = UserUpdate(is_active=new_status)
     await crud.update_user(session=session, db_user=user, user_in=user_in)
@@ -226,8 +226,8 @@ async def toggle(
     message = "User has been activated" if new_status else "User has been deactivated"
 
     # Send a notification to the user if they have a chat ID
-    if chat_id:
-        bot = Bot(settings.BOT_TOKEN)
-        await bot.send_message(chat_id=user.chat_id, text=message)
+    # if chat_id:
+    #     bot = Bot(settings.BOT_TOKEN)
+    #     await bot.send_message(chat_id=user.chat_id, text=message)
 
     return Message(message=message)
