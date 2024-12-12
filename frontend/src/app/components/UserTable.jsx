@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { UserPlusIcon } from "@heroicons/react/24/solid";
 import SkeletonTable from '@/app/components/UserTableSkeleton';
 import {
@@ -20,10 +20,11 @@ import {
   Spinner
 } from "@material-tailwind/react";
 
-const TABLE_HEAD = ["User", "Status"];
+const TABLE_HEAD = ["User", "ID", "Chat ID", "Status", ""];
 
 export default function UsersTable({ users: initialUsers, token }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -46,24 +47,49 @@ export default function UsersTable({ users: initialUsers, token }) {
       const data = await response.json()
   
       if (!response.ok) {
-        // const data = await response.json();
         alert(data.message || "Failed to toggle user status.");
         return;
       }
   
-      if (response.ok) {
-        setUsers((prevUsers) =>
-          prevUsers.map((user) =>
-            // Update the toggled user's data in place to reflect change without the need to refresh page
-            user.id === id ? { ...user, is_active: !user.is_active } : user
-          )
-        );
-      }
-  
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          // Update the toggled user's data in place to reflect change without the need to refresh page
+          user.id === id ? { ...user, is_active: !user.is_active } : user
+        )
+      );
       alert(data.message);
     } catch (error) {
         console.error(error);
         alert("An error occurred while toggling user status.");
+    } finally {
+        setLoading(false);
+        setConfirmOpen(false);
+    }
+  };  
+
+  const handleDeleteUser = async (id) => {
+    setLoading(true);
+    try {
+      const toggleUrl = `https://auto-nabavka.onrender.com/api/users/${id}`;
+      const response = await fetch(toggleUrl, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token.value}`,
+        },
+      });
+
+      const data = await response.json()
+  
+      if (!response.ok) {
+        alert(data.message || "Failed to delete user.");
+        return;
+      }
+
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== id));
+      alert(data.message);
+    } catch (error) {
+        console.error(error);
+        alert("An error occurred while deleting the user.");
     } finally {
         setLoading(false);
         setConfirmOpen(false);
@@ -86,7 +112,7 @@ export default function UsersTable({ users: initialUsers, token }) {
       // Response is the user
       const data = await response.json();
       if (response.ok) {
-        // Add new user to list of user for automatic rerender
+        // Add new user to list of users for automatic rerender
         setUsers((prevUsers) => [...prevUsers, data]); 
       } else {
         alert("Failed to create user");
@@ -143,7 +169,7 @@ export default function UsersTable({ users: initialUsers, token }) {
               </tr>
             </thead>
             <tbody>
-              {users.map(({ id, name, email, is_active }, index) => {
+              {users.map(({ id, name, email, is_active, chat_id, is_superuser }, index) => {
                 const isLast = index === users.length - 1;
                 const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
                 return (
@@ -151,9 +177,28 @@ export default function UsersTable({ users: initialUsers, token }) {
                     <td className={classes}>
                       <div className="flex items-center gap-3">
                         <div className="flex flex-col">
-                          <Typography variant="small" color="blue-gray" className="font-normal">{name}</Typography>
-                          <Typography variant="small" color="blue-gray" className="font-normal opacity-70">{email}</Typography>
+                          <Typography variant="small" color="blue-gray" className="font-normal">{email}</Typography>
+                          <Typography variant="small" color="blue-gray" className="font-normal opacity-70">
+                            {
+                              is_superuser ?
+                              'Admin' : 'User'
+                            }
+                          </Typography>
                         </div>
+                      </div>
+                    </td>
+                    <td className={classes}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col">
+                          <Typography variant="small" color="blue-gray" className="font-normal">{id}</Typography>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={classes}>
+                      <div className="items-center gap-3">
+                        <Typography variant="small" color="blue-gray" className="font-normal">
+                          {chat_id ? chat_id : "-"}
+                        </Typography>
                       </div>
                     </td>
                     <td className={classes}>
@@ -168,6 +213,17 @@ export default function UsersTable({ users: initialUsers, token }) {
                         />
                       </div>
                     </td>
+                    <td className={classes}>
+                      <div className="w-max">
+                        <TrashIcon 
+                          className='w-8 h-8'
+                          onClick={() => {
+                            setDeleteOpen((cur) => !cur)
+                            setSelectedId(id)
+                          }}
+                        />
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -178,7 +234,7 @@ export default function UsersTable({ users: initialUsers, token }) {
 
       {/* Toggle user confirm Dialog */}
       <Dialog open={confirmOpen} handler={() => setConfirmOpen((cur) => !cur)}>
-        <DialogHeader>Confirm Action</DialogHeader>
+        <DialogHeader>Toggle user status</DialogHeader>
         <DialogBody>Are you sure you want to toggle the status of this user?</DialogBody>
         <DialogFooter>
           <button onClick={() => setConfirmOpen(false)} className="mr-2 bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
@@ -203,6 +259,18 @@ export default function UsersTable({ users: initialUsers, token }) {
             </Button>
           </CardFooter>
         </Card>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={deleteOpen} handler={() => setDeleteOpen((cur) => !cur)}>
+        <DialogHeader>Delete user</DialogHeader>
+        <DialogBody>Are you sure you want to delete this user? This action cannot be undone</DialogBody>
+        <DialogFooter>
+          <button onClick={() => setDeleteOpen(false)} className="mr-2 bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+          <button onClick={() => handleDeleteUser(selectedId)} className="flex items-center bg-red-500 text-white px-4 py-2 rounded" disabled={loading}>
+            {loading ? <Spinner /> : "Delete"}
+          </button>
+        </DialogFooter>
       </Dialog>
     </div>
   );
