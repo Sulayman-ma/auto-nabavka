@@ -309,7 +309,7 @@ async def start_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return EMAIL
 
 async def collect_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    email = await update.message.text.strip()
+    email = update.message.text.strip()
     context.user_data['email'] = email
 
     # Check if account exists for provided email
