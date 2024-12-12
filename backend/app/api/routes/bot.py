@@ -323,7 +323,7 @@ async def collect_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("User already linked to a Telegram chat, use /unlink to unlink.")
             return ConversationHandler.END
 
-    update.message.reply_text("Enter your password:")
+    await update.message.reply_text("Enter your password:")
     return PASSWORD
 
 async def verify_claim(update: Update, context: ContextTypes.DEFAULT_TYPE):
