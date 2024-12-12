@@ -52,11 +52,11 @@ async def seturl(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     async with AsyncSessionLocal() as session:
         db_user = await crud.get_user_by_chat_id(session=session, chat_id=chat_id)
-        # Abort if user not found
+        # Abort account is not linked
         if not db_user:
-            await update.message.reply_text("User not found, please use /link if you have an account.")
+            await update.message.reply_text("Account not linked, please use /link if you have an account.")
             return
-        # Abort if user is disabled, preventing them from changing their URL
+        # Abort if user is disabled
         if not db_user.is_active:
             await update.message.reply_text("Account is disabled, please contact an admin to enable it.")
             return
@@ -84,6 +84,14 @@ async def link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     email = context.args[0]
     chat_id = update.message.chat_id
 
+    # Check if this chat is already linked to an account
+    async with AsyncSessionLocal() as session:
+        db_user = await crud.get_user_by_chat_id(session=session, chat_id=chat_id)
+        # User found with the current chat ID, then that user's account has been linked to the chat already
+        if db_user:
+            await update.message.reply_text("This chat is already to an account, unlink it with /unlink.")
+            return
+
     async with AsyncSessionLocal() as session:
         db_user = await crud.get_user_by_email(session=session, email=email)
         # Abort if user not found
@@ -92,7 +100,7 @@ async def link(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         # Check if user account is tied to a chat ID already
         if db_user.chat_id:
-            await update.message.reply_text("Your Telegram is already linked to an account, remove it wth /unlink.")
+            await update.message.reply_text("The user is already linked to a Telegram chat, remove it wth /unlink.")
             return
         
         """Link user with current chat ID"""
@@ -116,7 +124,7 @@ async def unlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db_user = await crud.get_user_by_chat_id(session=session, chat_id=chat_id)
         # Abort if user is not found.
         if not db_user:
-            await update.message.reply_text("Chat not linked with any account, please link before unlinking.")
+            await update.message.reply_text("No account is linked.")
             return
 
         """Unlink account and set is_task_active to False to prevent checking in Celery"""
@@ -287,28 +295,52 @@ async def ask_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """Conversation for linking account"""
 EMAIL, PASSWORD = range(2)
 
-async def start_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Welcome, link your chat to your account by entering your registered email:")
+async def start_link(update: Update, context: ContextTypes.DEFAULT_TYPE):    
+    # Check if this chat is already linked to an account
+    chat_id = update.message.chat_id
+    async with AsyncSessionLocal() as session:
+        db_user = await crud.get_user_by_chat_id(session=session, chat_id=chat_id)
+        # User found with the current chat ID, then that user's account has been linked to the chat already
+        if db_user:
+            await update.message.reply_text("This chat is already to an account, unlink it with /unlink.")
+            return ConversationHandler.END
+        
+    await update.message.reply_text("Welcome, link your account by entering your registered email:")
     return EMAIL
 
-async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def collect_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     email = await update.message.text.strip()
     context.user_data['email'] = email
+
+    # Check if account exists for provided email
+    async with AsyncSessionLocal() as session:
+        db_user = await crud.get_user_by_email(session=session, email=email)
+        if not db_user:
+            await update.message.reply_text("User not found, please check the email entered and type it again.")
+            return EMAIL
+        # Check if user account is tied to a chat ID already
+        if db_user.chat_id:
+            await update.message.reply_text("User already linked to a Telegram chat, use /unlink to unlink.")
+            return ConversationHandler.END
 
     update.message.reply_text("Enter your password:")
     return PASSWORD
 
-async def handle_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def verify_claim(update: Update, context: ContextTypes.DEFAULT_TYPE):
     password = update.message.text.strip()
     email = context.user_data['email']
+    chat_id = update.message.chat_id
 
     # Verify user's claim and account
     async with AsyncSessionLocal() as session:
         db_user = crud.authenticate(session=session, email=email, password=password)
         if db_user:
-            await update.message.reply_text("Account linked successfully!")
+            """Link user with current chat ID"""
+            user_in = UserUpdate(chat_id=chat_id)
+            await crud.update_user(session=session, db_user=db_user, user_in=user_in)
+            await update.message.reply_text("Account linked successfully! Set your URL with the /seturl command.")
         else:
-            await update.message.reply_text("Invalid email or password. Please also ensure you have an account.")
+            await update.message.reply_text("Incorrect password.")
 
     return ConversationHandler.END
 
@@ -326,20 +358,20 @@ registration_handler = ConversationHandler(
 link_handler = ConversationHandler(
     entry_points=[CommandHandler("link", start_link)],
     states={
-        EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_email)],
-        PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_password)],
+        EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, collect_email)],
+        PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, verify_claim)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
+    allow_reentry=True
 )
 
 bot_app.add_handler(registration_handler)
 bot_app.add_handler(link_handler)
 bot_app.add_handler(CommandHandler("start", start))
 bot_app.add_handler(CommandHandler("seturl", seturl))
-bot_app.add_handler(CommandHandler("enable", enable))
-bot_app.add_handler(CommandHandler("disable", disable))
+# bot_app.add_handler(CommandHandler("enable", enable))
+# bot_app.add_handler(CommandHandler("disable", disable))
 bot_app.add_handler(CommandHandler("help", help))
-# bot_app.add_handler(CommandHandler("link", link))
 bot_app.add_handler(CommandHandler("unlink", unlink))
 bot_app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
