@@ -1,5 +1,6 @@
 import UsersTable from '@/app/components/UserTable';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 async function getUsers(token) {
   try {
@@ -30,8 +31,7 @@ export default async function Page() {
 
   // Redirect to login if no token is found
   if (!token) {
-    redirect('/login');
-    return null;
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   const users = await getUsers(token);
