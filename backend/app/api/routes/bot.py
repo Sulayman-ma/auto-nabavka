@@ -34,7 +34,7 @@ async def seturl(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Return an error if URL was not provided
     if not context.args:
-        await update.message.reply_text("Please provide a URL using /demo <urlhere>.")
+        await update.message.reply_text("Please provide a URL in your command.")
         return
 
     if len(context.args) > 1:
