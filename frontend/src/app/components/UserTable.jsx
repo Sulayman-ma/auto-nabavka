@@ -217,7 +217,7 @@ export default function UsersTable({ users: initialUsers, token }) {
                     <td className={classes}>
                       <div className="w-max">
                         <TrashIcon 
-                          className='cursor-pointer hover:text-red-700'
+                          className='w-7 h-7 cursor-pointer hover:text-red-700'
                           onClick={() => {
                             setDeleteOpen((cur) => !cur)
                             setSelectedId(id)
