@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { UserPlusIcon } from "@heroicons/react/24/solid";
+import SkeletonTable from '@/app/components/UserTableSkeleton';
 import {
   Card,
   CardHeader,
@@ -33,7 +34,7 @@ export default function UsersTable({ users: initialUsers, token }) {
   const handleToggleUser = async (id) => {
     setLoading(true);
     try {
-      const toggleUrl = `https://auto-nabavka.onrender.com/api/users/toggle/${id}`;
+      const toggleUrl = `${process.env.API_URL}/api/users/toggle/${id}`;
       const response = await fetch(toggleUrl, {
         method: 'POST',
         headers: {
@@ -72,7 +73,7 @@ export default function UsersTable({ users: initialUsers, token }) {
   const handleCreateUser = async () => {
     setLoading(true);
     try {
-      const url = `https://auto-nabavka.onrender.com/api/users/`;
+      const url = `${process.env.API_URL}/api/users/`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -174,6 +175,7 @@ export default function UsersTable({ users: initialUsers, token }) {
           </table>
         </CardBody>
       </Card>
+
       {/* Toggle user confirm Dialog */}
       <Dialog open={confirmOpen} handler={() => setConfirmOpen((cur) => !cur)}>
         <DialogHeader>Confirm Action</DialogHeader>
@@ -185,6 +187,7 @@ export default function UsersTable({ users: initialUsers, token }) {
           </button>
         </DialogFooter>
       </Dialog>
+      
       {/* Create User Dialog */}
       <Dialog size="xs" open={createOpen} handler={() => setCreateOpen((cur) => !cur)} className="bg-transparent shadow-none">
         <Card className="mx-auto w-full max-w-[24rem]">
