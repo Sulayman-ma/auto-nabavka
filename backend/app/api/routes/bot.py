@@ -7,12 +7,14 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Request, BackgroundTasks, Response, status, HTTPException
 
+from sqlmodel import select
+
 from app import crud
 from app.api.deps import SessionDep
 from app.core.config import settings
 from app.core.db import AsyncSessionLocal
 from app.core.security import verify_password
-from app.models import UserUpdate, UserCreate, UsersPublic, TaskRequest, AdsRequest
+from app.models import User, UserUpdate, UserCreate, UsersPublic, TaskRequest, AdsRequest
 
 
 router = APIRouter()
@@ -407,10 +409,16 @@ async def queue_tasks(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid request."
         )
+    
+    statement = select(User).where(
+        User.is_active == True,
+        User.is_task_active == True
+    )
+    users_results = await session.execute(statement)
+    users = users_results.scalars().all()
+    count = len(users)
 
-    users = await crud.get_task_active_users(session=session)
-
-    return users
+    return UsersPublic(data=users, count=count)
 
 
 @router.post("/send-ads", response_model=int, status_code=200)

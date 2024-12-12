@@ -7,12 +7,11 @@ from curl_cffi import requests
 from curl_cffi.requests import exceptions
 from dotenv import load_dotenv
 
-from app.models import User
 from app.core.config import settings
 
 
 
-def search_main(user: User) -> Any:
+def search_main(user: dict) -> Any:
     search_url = user['mobili_url']
     chat_id = user['chat_id']
 

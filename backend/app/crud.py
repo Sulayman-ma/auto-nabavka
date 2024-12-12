@@ -1,9 +1,9 @@
 from typing import Any
 
-from sqlmodel import Session, select
+from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import User, UserCreate, UserUpdate, UsersPublic
+from app.models import User, UserCreate, UserUpdate
 from app.core.security import get_password_hash, verify_password
 
 
@@ -41,18 +41,6 @@ async def get_user_by_chat_id(*, session: AsyncSession, chat_id: int) -> User | 
     statement = select(User).where(User.chat_id == chat_id)
     session_user = await session.execute(statement)
     return session_user.scalars().first()
-
-
-async def get_task_active_users(*, session: AsyncSession) -> UsersPublic:
-    # Fetch active users with active tasks only and return a list of dict with their chat IDs and URLs
-    statement = select(User).where(
-        User.is_active == True,
-        User.is_task_active == True
-    )
-    users_results = await session.execute(statement)
-    users = users_results.scalars().all()
-
-    return UsersPublic(data=users, count=len(users))
 
 
 async def authenticate(*, session: AsyncSession, email: str, password: str) -> User | None:
