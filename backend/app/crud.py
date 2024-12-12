@@ -45,17 +45,12 @@ async def get_user_by_chat_id(*, session: AsyncSession, chat_id: int) -> User | 
 
 async def get_task_active_users(*, session: AsyncSession) -> list[dict[str, int | str]] | None:
     # Fetch active users with active tasks only and return a list of dict with their chat IDs and URLs
-    statement = select(User).where(User.is_task_active == True, User.is_active == True)
+    statement = select(User).where(
+        User.is_active == True, 
+        User.is_task_active == True
+    )
     session_users = await session.execute(statement)
-    pairs: list[dict[str, int | str]] = []
-    if session_users:
-        pairs = [
-            {
-                "chat_id": user.chat_id,
-                "mobili_url": user.mobili_url,
-            } for user in session_users.scalars().all()
-        ]
-    return pairs
+    return session_users.scalars().all()
 
 
 async def authenticate(*, session: AsyncSession, email: str, password: str) -> User | None:

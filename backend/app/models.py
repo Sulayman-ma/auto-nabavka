@@ -55,6 +55,7 @@ class UpdatePassword(SQLModel):
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: uuid.UUID
+    chat_id: int | None
 
 
 class UsersPublic(SQLModel):
