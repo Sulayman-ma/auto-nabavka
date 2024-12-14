@@ -450,7 +450,7 @@ async def send_ads(
     if not previous_ads:
         await crud.update_user(session=session, db_user=db_user, user_in=user_in)
         return JSONResponse(
-            content={"message": f"Ads set: {chat_id}"},
+            content={"message": f"FIRST TIME SET: {chat_id}"},
             status_code=status.HTTP_200_OK
         )
 
@@ -464,10 +464,10 @@ async def send_ads(
                 continue
         await crud.update_user(session=session, db_user=db_user, user_in=user_in)
         return JSONResponse(
-            content={"message": f"Ads sent to: {chat_id}"},
+            content={"message": f"NEW: {len(new_ads)} ad(s) for: {chat_id}"},
             status_code=status.HTTP_200_OK
         )
     return JSONResponse(
-        content={"message": f"No new ads for: {chat_id}"},
+        content={"message": "No new ads"},
         status_code=status.HTTP_200_OK
     )

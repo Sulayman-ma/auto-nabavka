@@ -3,9 +3,11 @@ import logging
 from rich import print
 from typing import Any
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from curl_cffi import requests
 from curl_cffi.requests import exceptions
-from dotenv import load_dotenv
+from urllib.parse import urlencode, urlparse, parse_qs, urlunparse
+
 
 from app.core.config import settings
 
@@ -36,44 +38,69 @@ def search_main(user: dict) -> Any:
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0'
     }
 
-    # Send request
-    logging.debug(f"Searching with filters")
-    try:
-        response = requests.get(impersonate="chrome", url=search_url, headers=headers)
-    except Exception as e:
-        return f"Failed to fetch results page: {str(e)}"
+    page = 1
+    while True:
+        # Parse the existing URL
+        parsed_url = urlparse(search_url)
 
-    # Parse response and search for results 
-    logging.debug("Parsing response content")
-    soup = BeautifulSoup(response.content, "html.parser")
-    articles = soup.select("article.classified")
+        # Extract existing query parameters
+        query_params = parse_qs(parsed_url.query)
 
-    # Parse results found for their image and contact
-    logging.debug(f"Found {len(articles)} ads for user: {chat_id}")
-    scripts = soup.find_all("script", {"type": "application/ld+json"})
-    scripts = scripts[::2]
-    for script in scripts:
+        if page > 1:
+            # Remove 'tag' parameter if page is greater than 1
+            query_params.pop('tag', None)
+
+            # Add city_distance=0 if page is greater than 1
+            query_params['city_distance'] = ['0']
+        
+        # Add or update the 'page' parameter
+        query_params['page'] = [str(page)]  # Ensure page is a string
+        
+        # Rebuild the URL with the updated query parameters
+        paginated_url = urlunparse(
+            parsed_url._replace(query=urlencode(query_params, doseq=True))
+        )
+
+        logging.debug(f"Searching page {page} with filters")
         try:
-            objects = json.loads(script.string)
-            for data in objects:
-                try:
-                    ad = {
-                        'image': data['image'],
-                        'name': data['name'].strip(),
-                        'url': data['url'],
-                        'production_date': data['productionDate'],
-                    }
-                    ads.append(ad)
-                except KeyError:
-                    continue
-        except IndexError:
-            logging.warning("Failed to index result JSON")
-            continue
+            response = requests.get(impersonate="chrome", url=paginated_url, headers=headers)
+        except Exception as e:
+            return f"Failed to fetch results page {page}: {str(e)}"
 
-    # No reuslts found
-    if not articles:
+        # Parse response and search for results
+        soup = BeautifulSoup(response.content, "html.parser")
+        articles = soup.select("article.classified")
+
+        if not articles:
+            break
+
+        logging.debug(f"Found {len(articles)} ads for user: {chat_id} on page {page}")
+        scripts = soup.find_all("script", {"type": "application/ld+json"})
+        scripts = scripts[::2]
+        for script in scripts:
+            try:
+                objects = json.loads(script.string)
+                for data in objects:
+                    try:
+                        ad = {
+                            'image': data['image'],
+                            'name': data['name'].strip(),
+                            'url': data['url'],
+                            'production_date': data['productionDate'],
+                        }
+                        ads.append(ad)
+                    except KeyError:
+                        continue
+            except IndexError:
+                logging.warning("Failed to index result JSON")
+                continue
+
+        page += 1
+
+    # No results found
+    if not ads:
         return "No ads found"
-    
+
     # Transform ads to caption only
     ads = [
         f"Name: {ad['name']}\nURL: {ad['url']}\nProduction Date: {ad['production_date']}"
@@ -101,10 +128,13 @@ if __name__ == "__main__":
     # Logging configuration
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s: %(message)s",
-        level=logging.INFO
+        level=logging.DEBUG
     )
 
     # Load environmental variables
     load_dotenv()
 
-    search_main("https://www.polovniautomobili.com/auto-oglasi/pretraga?brand=baw", 1234)
+    search_main({
+        'mobili_url': "https://www.polovniautomobili.com/auto-oglasi/pretraga?brand=&model%5B%5D=110&brand2=&price_from=&price_to=6000&year_from=&year_to=&flywheel=&atest=&region%5B%5D=2557&region%5B%5D=2554&door_num=&without_price=1&date_limit=&showOldNew=all&modeltxt=&engine_volume_from=&engine_volume_to=&power_from=&power_to=&mileage_from=&mileage_to=&emission_class=&seat_num=&wheel_side=&registration=&country=&country_origin=&city=&registration_price=&page=&sort=renewDate_desc&tag=true",
+        'chat_id': 1234
+    })
